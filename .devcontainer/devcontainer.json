@@ -1,5 +1,5 @@
 {
-  "name": "Claude Code Sandbox",
+  "name": "Ralph Sandbox - ${localWorkspaceFolderBasename}",
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
@@ -39,8 +39,9 @@
   },
   "remoteUser": "node",
   "mounts": [
-    "source=claude-code-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
-    "source=claude-code-config-${devcontainerId},target=/home/node/.claude,type=volume"
+    "source=ralph-bashhistory-${devcontainerId},target=/commandhistory,type=volume",
+    "source=ralph-claude-config-${devcontainerId},target=/home/node/.claude,type=volume",
+    "source=ralph-cursor-config-${devcontainerId},target=/home/node/.cursor,type=volume"
   ],
   "containerEnv": {
     "NODE_OPTIONS": "--max-old-space-size=4096",

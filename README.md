@@ -6,11 +6,27 @@ This project is configured to run the [Ralph](https://github.com/snarktank/ralph
 
 - **Git repository**: run Ralph from the root of a git repo.
 - **`jq` installed**: used by the loop script (e.g. `sudo apt install jq` on Debian/Ubuntu).
-- **Cursor CLI installed**:
+- **Cursor CLI** (when not using the devcontainer):
   - Follow the official docs: see `https://cursor.com/docs/cli/overview`.
   - Ensure the `agent` command is available on your `PATH` in the shell where you run Ralph.
 - **Optional tooling**:
   - Amp CLI and/or Claude Code CLI if you want to use `--tool amp` or `--tool claude` instead of Cursor.
+
+### Devcontainer (recommended for Cursor)
+
+The repo includes a devcontainer (`.devcontainer/`) that:
+
+- **Pre-installs Cursor CLI** and Claude Code alongside standard dev tools; the `agent` command is on `PATH`.
+- **Uses project-unique names and volumes**: container name is `Ralph Sandbox - <workspace folder name>`, and config volumes are keyed by devcontainer ID so Cursor/Claude config and bash history do not overlap between projects.
+- **Restricts outbound network** via a firewall script (GitHub, npm, Anthropic, Cursor API domains, etc. are allowlisted) so Ralph runs in a constrained environment.
+
+**Using the devcontainer:**
+
+1. Open the project in Cursor (or VS Code) and choose **Reopen in Container** when prompted, or run the devcontainer from the command palette.
+2. In a terminal inside the container, run **`agent login`** once. Your Cursor credentials are stored in the container’s Cursor config volume and persist across restarts.
+3. Run Ralph from the project root: `./scripts/ralph/ralph.sh --tool cursor [max_iterations]`.
+
+The script invokes the Cursor CLI with `--yolo`, `--trust`, and `--approve-mcps` so the agent can run fully autonomously (no confirmation prompts) until the loop hits max iterations or sees `<promise>COMPLETE</promise>`.
 
 ### Ralph files in this repo
 
@@ -104,7 +120,9 @@ If you omit `--tool`, the script defaults to `amp` to match the upstream Ralph b
 ### Troubleshooting
 
 - **`agent: command not found`**:
-  - Install Cursor CLI and/or fix your `PATH` so `agent` is available, then rerun the script.
+  - Install Cursor CLI and/or fix your `PATH` so `agent` is available, then rerun the script. In the devcontainer, Cursor CLI is pre-installed; ensure you are in a terminal inside the container.
+- **Cursor CLI not authenticated** (e.g. errors about login or API key):
+  - Inside the devcontainer, run `agent login` once and complete the browser flow; credentials are stored in the container’s Cursor config volume.
 - **Loop hits max iterations without completing**:
   - Check `scripts/ralph/progress.txt` for errors or blockers.
   - Make sure your PRD stories are small enough to fit in a single agent context.
