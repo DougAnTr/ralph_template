@@ -1,6 +1,11 @@
 #!/bin/bash
-set -euo pipefail  # Exit on error, undefined vars, and pipeline failures
-IFS=$'\n\t'       # Stricter word splitting
+set -euo pipefail
+IFS=$'\n\t'
+
+if [ "${RALPH_DISABLE_FIREWALL:-0}" = "1" ] || [ "${RALPH_DISABLE_FIREWALL:-0}" = "true" ]; then
+  echo "RALPH_DISABLE_FIREWALL is set - skipping firewall (outbound traffic allowed)."
+  exit 0
+fi
 
 # 1. Extract Docker DNS info BEFORE any flushing
 DOCKER_DNS_RULES=$(iptables-save -t nat | grep "127\.0\.0\.11" || true)
@@ -73,7 +78,11 @@ for domain in \
     "marketplace.visualstudio.com" \
     "vscode.blob.core.windows.net" \
     "update.code.visualstudio.com" \
+    "api.cursor.com" \
     "api2.cursor.sh" \
+    "api3.cursor.sh" \
+    "api4.cursor.sh" \
+    "repo42.cursor.sh" \
     "authenticator.cursor.sh" \
     "authenticate.cursor.sh" \
     "marketplace.cursorapi.com" \

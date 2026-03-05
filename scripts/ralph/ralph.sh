@@ -1,12 +1,13 @@
 #!/bin/bash
 # Ralph Wiggum - Long-running AI agent loop
-# Usage: ./ralph.sh [--tool amp|claude|cursor] [max_iterations]
+# Usage: ./ralph.sh [--tool amp|claude|cursor] [--model <name>] [max_iterations]
 
 set -e
 
 # Parse arguments
-TOOL="amp"  # Default to amp for backwards compatibility
+TOOL="amp"
 MAX_ITERATIONS=10
+CURSOR_MODEL="auto"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -18,8 +19,15 @@ while [[ $# -gt 0 ]]; do
       TOOL="${1#*=}"
       shift
       ;;
+    --model)
+      CURSOR_MODEL="$2"
+      shift 2
+      ;;
+    --model=*)
+      CURSOR_MODEL="${1#*=}"
+      shift
+      ;;
     *)
-      # Assume it's max_iterations if it's a number
       if [[ "$1" =~ ^[0-9]+$ ]]; then
         MAX_ITERATIONS="$1"
       fi
@@ -27,6 +35,10 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [ -n "${CURSOR_AGENT_MODEL:-}" ] && [ -z "$CURSOR_MODEL" ]; then
+  CURSOR_MODEL="$CURSOR_AGENT_MODEL"
+fi
 
 # Validate tool choice
 if [[ "$TOOL" != "amp" && "$TOOL" != "claude" && "$TOOL" != "cursor" ]]; then
@@ -100,13 +112,11 @@ for i in $(seq 1 $MAX_ITERATIONS); do
     # Claude Code: use --dangerously-skip-permissions for autonomous operation, --print for output
     OUTPUT=$(claude --dangerously-skip-permissions --print < "$SCRIPT_DIR/CLAUDE.md" 2>&1 | tee /dev/stderr) || true
   else
-    # Cursor Agent CLI: non-interactive print mode with full autonomy
-    OUTPUT=$(agent -p \
-      --yolo \
-      --trust \
-      --approve-mcps \
-      --output-format text \
-      "$(cat "$SCRIPT_DIR/CLAUDE.md")" 2>&1 | tee /dev/stderr) || true
+    CURSOR_ARGS=(-p --yolo --trust --approve-mcps --output-format text)
+    if [ -n "$CURSOR_MODEL" ]; then
+      CURSOR_ARGS+=(--model "$CURSOR_MODEL")
+    fi
+    OUTPUT=$(agent "${CURSOR_ARGS[@]}" "$(cat "$SCRIPT_DIR/CLAUDE.md")" 2>&1 | tee /dev/stderr) || true
   fi
   
   # Check for completion signal

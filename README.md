@@ -18,12 +18,12 @@ The repo includes a devcontainer (`.devcontainer/`) that:
 
 - **Pre-installs Cursor CLI** and Claude Code alongside standard dev tools; the `agent` command is on `PATH`.
 - **Uses project-unique names and volumes**: container name is `Ralph Sandbox - <workspace folder name>`, and config volumes are keyed by devcontainer ID so Cursor/Claude config and bash history do not overlap between projects.
-- **Restricts outbound network** via a firewall script (GitHub, npm, Anthropic, Cursor API domains, etc. are allowlisted) so Ralph runs in a constrained environment.
+- **Optional outbound firewall**: a script can restrict outbound network to a allowlist (GitHub, npm, Anthropic, Cursor, etc.); it is **disabled by default** so the Cursor agent CLI works inside the container. To enable it for a locked-down environment, remove `RALPH_DISABLE_FIREWALL` from `containerEnv` in `.devcontainer/devcontainer.json` (or set it to `0`) and rebuild.
 
 **Using the devcontainer:**
 
 1. Open the project in Cursor (or VS Code) and choose **Reopen in Container** when prompted, or run the devcontainer from the command palette.
-2. In a terminal inside the container, run **`agent login`** once. Your Cursor credentials are stored in the container’s Cursor config volume and persist across restarts.
+2. In a terminal inside the container, run **`agent login`** once. Your Cursor credentials are stored in the container’s Cursor config volume and persist across restarts. Ensure a model is available for the CLI (e.g. run `agent models` to list options; you can set `CURSOR_AGENT_MODEL` or pass `--model <name>` to the script if the default fails in print mode).
 3. Run Ralph from the project root: `./scripts/ralph/ralph.sh --tool cursor [max_iterations]`.
 
 The script invokes the Cursor CLI with `--yolo`, `--trust`, and `--approve-mcps` so the agent can run fully autonomously (no confirmation prompts) until the loop hits max iterations or sees `<promise>COMPLETE</promise>`.
@@ -123,6 +123,10 @@ If you omit `--tool`, the script defaults to `amp` to match the upstream Ralph b
   - Install Cursor CLI and/or fix your `PATH` so `agent` is available, then rerun the script. In the devcontainer, Cursor CLI is pre-installed; ensure you are in a terminal inside the container.
 - **Cursor CLI not authenticated** (e.g. errors about login or API key):
   - Inside the devcontainer, run `agent login` once and complete the browser flow; credentials are stored in the container’s Cursor config volume.
+- **No model found**:
+  - Run `agent login` first. Then run `agent models` to see available models. If the default fails in print mode, set the `CURSOR_AGENT_MODEL` environment variable or pass `--model <name>` to the script (e.g. `./scripts/ralph/ralph.sh --tool cursor --model <name> 5`).
+- **[internal] or Connection lost**:
+  - Run `agent login` and complete the browser flow. The firewall is off by default; if you enabled it and see these errors, the allowlist may be blocking a host the CLI needs — disable it again with `RALPH_DISABLE_FIREWALL=1` in `containerEnv` or run Ralph from the host.
 - **Loop hits max iterations without completing**:
   - Check `scripts/ralph/progress.txt` for errors or blockers.
   - Make sure your PRD stories are small enough to fit in a single agent context.

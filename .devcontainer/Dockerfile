@@ -25,7 +25,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   jq \
   nano \
   vim \
+  locales \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Generate en_US.UTF-8 locale to avoid setlocale warnings
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
+ENV LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 
 # Ensure default node user has access to /usr/local/share
 RUN mkdir -p /usr/local/share/npm-global && \
