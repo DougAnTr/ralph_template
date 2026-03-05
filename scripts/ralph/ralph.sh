@@ -100,8 +100,13 @@ for i in $(seq 1 $MAX_ITERATIONS); do
     # Claude Code: use --dangerously-skip-permissions for autonomous operation, --print for output
     OUTPUT=$(claude --dangerously-skip-permissions --print < "$SCRIPT_DIR/CLAUDE.md" 2>&1 | tee /dev/stderr) || true
   else
-    # Cursor Agent CLI: non-interactive print mode with text output
-    OUTPUT=$(agent -p --output-format text "$(cat "$SCRIPT_DIR/CLAUDE.md")" 2>&1 | tee /dev/stderr) || true
+    # Cursor Agent CLI: non-interactive print mode with full autonomy
+    OUTPUT=$(agent -p \
+      --yolo \
+      --trust \
+      --approve-mcps \
+      --output-format text \
+      "$(cat "$SCRIPT_DIR/CLAUDE.md")" 2>&1 | tee /dev/stderr) || true
   fi
   
   # Check for completion signal
